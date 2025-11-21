@@ -4,7 +4,7 @@ from aiogram.filters import CommandStart
 
 from loguru import logger
 
-from loader import dp, N8N_ONBOARDING_WEBHOOK_URL
+from loader import dp, N8N_ROUTER_URL, N8N_CHECK_STATUS_URL
 from data.texts import (
     MSG_STEP_1, MSG_STEP_2, MSG_STEP_3, MSG_STEP_4,
     MSG_STEP_5, MSG_STEP_6, MSG_STEP_7, MSG_START_FORECAST
@@ -122,47 +122,56 @@ async def start_forecast(callback: types.CallbackQuery):
     }
 
     # 3. Отправляем вебхук в n8n
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(N8N_ONBOARDING_WEBHOOK_URL, json=data_to_send) as response:
-                if response.status == 200:
-                    logger.success(f"user_id={user_id} | Успешная передача в n8n")
-                else:
-                    logger.error(
-                        f"user_id={user_id} | Ошибка от n8n. Статус: {response.status}, Ответ: {await response.text()}"
-                    )
-                    await callback.message.answer(
-                        "Произошла небольшая ошибка на сервере. Попробуйте начать заново: /start"
-                    )
-    except aiohttp.ClientConnectorError as e:
-        logger.critical(f"user_id={user_id} | Ошибка подключения к n8n: {e}")
-        await callback.message.answer(
-            "Не удалось связаться с сервером для начала опроса. Пожалуйста, попробуйте позже, нажав /start."
-        )
+    await send_to_n8n(data_to_send, user_id, callback.message)
 
 
-# ----------------------------------------------------------------------------------------------------------------------
-# ВАЖНО: Этот хэндлер должен быть последним в цепочке обработчиков сообщений,
-# так как он ловит ЛЮБОЕ текстовое сообщение.
-# ----------------------------------------------------------------------------------------------------------------------
+# --- Хэндлер для ЛЮБОГО текста (Router logic) ---
 @dp.message()
 async def forward_any_message_to_n8n(message: types.Message):
-    """
-    Этот хэндлер перехватывает любое текстовое сообщение, которое не было обработано ранее,
-    и пересылает его в n8n для дальнейшей обработки (например, как ответ на вопрос).
-    """
     user_id = message.from_user.id
-    # Логируем только часть сообщения для краткости
-    logger.info(f"user_id={user_id} | Пересылка сообщения в n8n: '{message.text[:30]}...'")
+    logger.info(f"user_id={user_id} | Получено сообщение: '{message.text[:30]}...'")
 
-    # 1. Формируем JSON для n8n в формате "ответ пользователя"
+    # 1. Определяем статус пользователя через n8n (db-access)
+    current_event_type = "eva_chat"  # Значение по умолчанию - обычный чат
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Отправляем user_id, чтобы узнать статус
+            check_payload = {"user_id": user_id}
+
+            async with session.post(N8N_CHECK_STATUS_URL, json=check_payload) as response:
+                if response.status == 200:
+                    # Ожидаем ответ от n8n вида: {"status": "interview"} или {"status": "completed"}
+                    result = await response.json()
+                    # --- ЗАЩИТА ОТ None ---
+                    if result is None:
+                        logger.warning(f"user_id={user_id} | n8n вернул null. Считаем статус completed.")
+                        result = {}
+                    # ----------------------
+                    status = result.get("status", "completed")
+
+                    if status == "interview":
+                        current_event_type = "user_answer"
+                        logger.info(f"user_id={user_id} | Статус: Интервью. Тип события: user_answer")
+                    else:
+                        current_event_type = "eva_chat"
+                        logger.info(f"user_id={user_id} | Статус: Чат. Тип события: eva_chat")
+                else:
+                    logger.warning(f"user_id={user_id} | Не удалось проверить статус. Используем eva_chat")
+
+    except Exception as e:
+        logger.error(f"user_id={user_id} | Ошибка проверки статуса: {e}")
+        # Если ошибка проверки - считаем, что это чат, чтобы не ломать логику
+        current_event_type = "eva_chat"
+
+    # 2. Формируем основной пакет данных
     data_to_send = {
-        "event_type": "user_answer",
+        "event_type": current_event_type,  # <--- Подставляем определенный тип
         "user_data": {
             "user_id": message.from_user.id,
             "chat_id": message.chat.id,
             "first_name": message.from_user.first_name,
-            "username": message.from_user.username if message.from_user.username else "",
+            "username": message.from_user.username or "",
             "message_id": message.message_id
         },
         "payload": {
@@ -170,15 +179,18 @@ async def forward_any_message_to_n8n(message: types.Message):
         }
     }
 
-    # 2. Отправляем вебхук в n8n
+    # 3. Отправляем в основной роутер
+    await send_to_n8n(data_to_send, user_id, message)
+
+
+async def send_to_n8n(data, user_id, message_obj):
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.post(N8N_ONBOARDING_WEBHOOK_URL, json=data_to_send) as response:
+            async with session.post(N8N_ROUTER_URL, json=data) as response:
                 if response.status == 200:
-                    logger.success(f"user_id={user_id} | Сообщение успешно переслано в n8n")
+                    logger.success(f"user_id={user_id} | Успешно отправлено в n8n ({data['event_type']})")
                 else:
-                    logger.error(
-                        f"user_id={user_id} | Ошибка от n8n при пересылке. Статус: {response.status}, Ответ: {await response.text()}"
-                    )
+                    text_resp = await response.text()
+                    logger.error(f"user_id={user_id} | Ошибка n8n {response.status}: {text_resp}")
     except aiohttp.ClientConnectorError as e:
-        logger.critical(f"user_id={user_id} | Ошибка подключения к n8n при пересылке сообщения: {e}")
+        logger.critical(f"user_id={user_id} | Ошибка подключения к n8n: {e}")

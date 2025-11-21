@@ -25,4 +25,5 @@ logger.add(
     buffering=True
 )
 
-N8N_ONBOARDING_WEBHOOK_URL = "https://citouloniquu.beget.app/webhook/eva-onboarding"
+N8N_ROUTER_URL = "https://citouloniquu.beget.app/webhook/eva-router"
+N8N_CHECK_STATUS_URL = "https://citouloniquu.beget.app/webhook/db-access"
