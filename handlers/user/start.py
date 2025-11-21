@@ -156,7 +156,7 @@ async def handler_not_now(callback: types.CallbackQuery):
     await callback.answer()
 
     data_to_send = {
-        "event_type": "eva_chat",
+        "event_type": "start_eva_chat",
         "user_data": {
             "user_id": user_id,
             "chat_id": callback.message.chat.id,
