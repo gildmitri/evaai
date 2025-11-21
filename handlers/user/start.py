@@ -125,6 +125,52 @@ async def start_forecast(callback: types.CallbackQuery):
     await send_to_n8n(data_to_send, user_id, callback.message)
 
 
+@dp.callback_query(F.data == "user_forecast")
+async def handler_user_forecast(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    logger.info(f"user_id={user_id} | Запрос прогноза (user_forecast)")
+
+    await callback.answer()
+
+    data_to_send = {
+        "event_type": "user_forecast",
+        "user_data": {
+            "user_id": user_id,
+            "chat_id": callback.message.chat.id,
+            "first_name": callback.from_user.first_name,
+            "username": callback.from_user.username or "",
+            "message_id": callback.message.message_id
+        },
+        "payload": {}
+    }
+
+    # Отправляем в Ева-Роутер
+    await send_to_n8n(data_to_send, user_id, callback.message)
+
+
+@dp.callback_query(F.data == "not_now")
+async def handler_not_now(callback: types.CallbackQuery):
+    user_id = callback.from_user.id
+    logger.info(f"user_id={user_id} | Нажал(а) на кнопку: Не сейчас")
+
+    await callback.answer()
+
+    data_to_send = {
+        "event_type": "eva_chat",
+        "user_data": {
+            "user_id": user_id,
+            "chat_id": callback.message.chat.id,
+            "first_name": callback.from_user.first_name,
+            "username": callback.from_user.username or "",
+            "message_id": callback.message.message_id
+        },
+        "payload": {}
+    }
+
+    # Отправляем в Ева-Роутер
+    await send_to_n8n(data_to_send, user_id, callback.message)
+
+
 # --- Хэндлер для ЛЮБОГО текста (Router logic) ---
 @dp.message()
 async def forward_any_message_to_n8n(message: types.Message):
