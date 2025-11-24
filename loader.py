@@ -12,8 +12,9 @@ config = Settings()
 bot = Bot(
     token=config.BOT_TOKEN.get_secret_value(),
     default=DefaultBotProperties(
-        parse_mode=ParseMode.HTML
-    )
+        parse_mode=ParseMode.HTML,
+        link_preview_is_disabled=True
+    ),
 )
 dp = Dispatcher(storage=MemoryStorage())
 

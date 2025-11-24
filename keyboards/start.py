@@ -5,13 +5,13 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 kb_onboarding_step_1 = InlineKeyboardBuilder()
 kb_onboarding_step_1.row(
     types.InlineKeyboardButton(
-        text="Что мы можем обсудить?",
+        text="🤔 Что мы можем обсудить?",
         callback_data="onboarding_step_2"
     )
 )
 kb_onboarding_step_1.row(
     types.InlineKeyboardButton(
-        text="Пропустить знакомство",
+        text="✨ Пропустить ✨",
         callback_data="start_forecast"
     )
 )
@@ -22,13 +22,13 @@ kb_onboarding_step_1.row(
 kb_onboarding_step_2 = InlineKeyboardBuilder()
 kb_onboarding_step_2.row(
     types.InlineKeyboardButton(
-        text="По каким методикам ты работаешь?",
+        text="🧠По каким методам ты работаешь?",
         callback_data="onboarding_step_3"
     )
 )
 kb_onboarding_step_2.row(
     types.InlineKeyboardButton(
-        text="Пропустить",
+        text="✨ Пропустить ✨",
         callback_data="start_forecast"
     )
 )
@@ -39,13 +39,13 @@ kb_onboarding_step_2.row(
 kb_onboarding_step_3 = InlineKeyboardBuilder()
 kb_onboarding_step_3.row(
     types.InlineKeyboardButton(
-        text="А откуда ты всё это знаешь?",
+        text="🎓 А откуда ты все это знаешь?",
         callback_data="onboarding_step_4"
     )
 )
 kb_onboarding_step_3.row(
     types.InlineKeyboardButton(
-        text="Пропустить",
+        text="✨ Пропустить ✨",
         callback_data="start_forecast"
     )
 )
@@ -56,13 +56,13 @@ kb_onboarding_step_3.row(
 kb_onboarding_step_4 = InlineKeyboardBuilder()
 kb_onboarding_step_4.row(
     types.InlineKeyboardButton(
-        text="Есть ситуации с которыми ты не работаешь?",
+        text="🥺 Есть ситуации, с которыми ты не работаешь?",
         callback_data="onboarding_step_5"
     )
 )
 kb_onboarding_step_4.row(
     types.InlineKeyboardButton(
-        text="Пропустить",
+        text="✨ Пропустить ✨",
         callback_data="start_forecast"
     )
 )
@@ -73,13 +73,13 @@ kb_onboarding_step_4.row(
 kb_onboarding_step_5 = InlineKeyboardBuilder()
 kb_onboarding_step_5.row(
     types.InlineKeyboardButton(
-        text="Моя информация в безопасности?",
+        text="🫣 Моя информация в безопасности ?",
         callback_data="onboarding_step_6"
     )
 )
 kb_onboarding_step_5.row(
     types.InlineKeyboardButton(
-        text="Пропустить",
+        text="✨ Пропустить ✨",
         callback_data="start_forecast"
     )
 )
@@ -90,7 +90,7 @@ kb_onboarding_step_5.row(
 kb_onboarding_step_6 = InlineKeyboardBuilder()
 kb_onboarding_step_6.row(
     types.InlineKeyboardButton(
-        text="Принято!",
+        text="✨Согласна✨",
         callback_data="onboarding_step_7"
     )
 )
@@ -101,7 +101,7 @@ kb_onboarding_step_6.row(
 kb_onboarding_step_7 = InlineKeyboardBuilder()
 kb_onboarding_step_7.row(
     types.InlineKeyboardButton(
-        text="Приступить к прогнозу",
+        text="Приступить к прогнозу 🔜",
         callback_data="start_forecast"
     )
 )
